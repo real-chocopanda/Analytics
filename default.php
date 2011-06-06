@@ -9,6 +9,7 @@ $PluginInfo['Analytics'] = array
   'Name' => 'Analytics',
   'Description' => 'Inserts Google Analytics Javascript EVERYWHERE!',
   'Version' => '1.0',
+  'SettingsUrl' => '/plugin/analytics',
   'Author' => 'Lykaon',
   'AuthorEmail' => 'lykaon@strahotksi.com',
   'AuthorUrl' => 'http://www.strahotski.com',
@@ -20,33 +21,77 @@ $PluginInfo['Analytics'] = array
 //
 class analyticsPlugin extends Gdn_Plugin
 {
-  //
-  // We want to get our hot selves into the page before it renders and
-  // what-not so that we can get our groove on and start tracking our
-  // forum users... in a cool way; not in a creepy stalker way.
-  //
-  public function Base_Render_Before(&$Sender)
-  {
-    // ************************************************************
-    // IF YOU READ NOTHING ELSE, READ THIS!
-    //
-    // CHANGE THIS TRACKING ID TO YOUR OWN.  THE GENERAL FORMAT IS
-    // IS BELOW, BUT I ASSURE YOU THAT ALL ZEROES WILL NOT MAKE MR.
-    // GOOGLE A HAPPY CAMPER!
-    // ************************************************************
-    $WebId = 'UA-0000000-0';
-    $DomainId = 'foobar.com';
 
-    // Now we're just going to add our javascript to the head.  It's not
-    // super pretty formatted, but it works and working is half the battle.
-    // Obviously, we're inserting the WebId from above (you changed that
-    // to yours, right?  Right??
+  /**
+   * Add Google Analytics js script to the page head
+   * It uses a WebId (ex 'UA-114584654-1') and a Domain (ex '.foobar.com')
+   * @param Controller $Sender
+   */
+  public function Base_Render_Before($Sender)
+  {
     $Sender->Head->AddString
     (
-      "<script type=\"text/javascript\">var _gaq = _gaq || [];_gaq.push(['_setAccount', '".$WebId."']);_gaq.push(['_setDomainName', '".$Domain."']);_gaq.push(['_trackPageview']);(function() {var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);})();
+      "<script type=\"text/javascript\">var _gaq = _gaq || [];_gaq.push(['_setAccount', '" . Gdn::Config('Plugin.Analytics.WebID') . "']);_gaq.push(['_setDomainName', '" . Gdn::Config('Plugin.Analytics.Domain') . "']);_gaq.push(['_trackPageview']);(function() {var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);})();
 </script>"
     );
   }
+
+  /**
+   * Backend: Make the route to the plugin settings page available
+   * @param Controller $Sender
+   */
+  public function PluginController_Analytics_Create($Sender) {
+
+  	$Sender->Title('Analytics');
+  	$Sender->AddSideMenu('plugin/analytics');
+
+  	// If your sub-pages use forms, this is a good place to get it ready
+    $Sender->Form = new Gdn_Form();
+
+    $this->Dispatch($Sender, $Sender->RequestArgs);
+  }
+
+  	/**
+   	 * Backend: Controller of the plugin settings page
+   	 * @see Gdn_Plugin::Controller_Index()
+   	 */
+	public function Controller_Index($Sender) {
+      // Prevent non-admins from accessing this page
+      $Sender->Permission('Vanilla.Settings.Manage');
+      $Sender->SetData('PluginDescription',$this->GetPluginKey('Description'));
+
+      $Validation = new Gdn_Validation();
+      $ConfigurationModel = new Gdn_ConfigurationModel($Validation);
+      $ConfigurationModel->SetField(array(
+         'Plugin.Analytics.WebID'     => ''
+      ));
+      $ConfigurationModel->SetField(array(
+         'Plugin.Analytics.Domain'     => ''
+      ));
+
+      // Set the model on the form.
+      $Sender->Form->SetModel($ConfigurationModel);
+
+      // If seeing the form for the first time...
+      if ($Sender->Form->AuthenticatedPostBack() === FALSE) {
+         // Apply the config settings to the form.
+         $Sender->Form->SetData($ConfigurationModel->Data);
+      } else {
+         $Validation->ApplyRule('Plugin.Analytics.WebID', 'string');
+         $Validation->ApplyRule('Plugin.Analytics.WebID', 'Required', T('ValidateRequired'));
+         $Validation->ApplyRule('Plugin.Analytics.Domain', 'string');
+         $Validation->ApplyRule('Plugin.Analytics.Domain', 'Required', T('ValidateRequired'));
+
+         $Saved = $Sender->Form->Save();
+         if ($Saved) {
+            $Sender->StatusMessage = T("Your changes have been saved.");
+         }
+      }
+
+      // GetView() looks for files inside plugins/PluginFolderName/views/ and returns their full path. Useful!
+      $Sender->Render($this->GetView('settings.php'));
+   }
+
 
   //
   // Here's where we tell Garden what to do to set us up the bomb.  But
