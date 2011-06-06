@@ -35,6 +35,7 @@ class analyticsPlugin extends Gdn_Plugin
     // GOOGLE A HAPPY CAMPER!
     // ************************************************************
     $WebId = 'UA-0000000-0';
+    $DomainId = 'foobar.com';
 
     // Now we're just going to add our javascript to the head.  It's not
     // super pretty formatted, but it works and working is half the battle.
@@ -42,7 +43,7 @@ class analyticsPlugin extends Gdn_Plugin
     // to yours, right?  Right??
     $Sender->Head->AddString
     (
-      "<script type=\"text/javascript\">var _gaq = _gaq || [];_gaq.push(['_setAccount', '".$WebId."']);_gaq.push(['_trackPageview']);(function() {var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);})();
+      "<script type=\"text/javascript\">var _gaq = _gaq || [];_gaq.push(['_setAccount', '".$WebId."']);_gaq.push(['_setDomainName', '".$Domain."']);_gaq.push(['_trackPageview']);(function() {var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);})();
 </script>"
     );
   }
